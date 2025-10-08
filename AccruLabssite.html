@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AccruLabs.ai — AI-as-a-Service</title>
+<meta name="theme-color" content="#0b0a0a" />
+<meta name="description" content="AccruLabs.ai — AccruReady, AccruAgent, AccruGuard, AccruLedger, AccruPrivacy." />
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ===== PALLETTE: warm/kinetic (no blue primary) ===== */
+:root{
+  --bg:#0b0a0a;        /* deep carbon */
+  --ink:#f6f3ee;       /* ivory ink */
+  --muted:#cfc7be;     /* soft sand */
+  --line:rgba(255,255,255,.07);
+  --max:1200px;
+  /* Section-animated accents (set via body class) */
+  --a:#f65a83; --b:#ffd36b; --c:#40f6a8; --d:#ff8a45;
+}
+
+/* ===== Reset / type ===== */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; color:var(--ink);
+  background: radial-gradient(1400px 800px at 100% -10%, rgba(246,90,131,.18), transparent 60%),
+              radial-gradient(900px 520px at 0% 110%, rgba(64,246,168,.12), transparent 60%),
+              linear-gradient(180deg,#0a0a0a 0%, #121010 100%);
+  font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, Helvetica, sans-serif;
+  overflow-x:hidden;
+}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 28px}
+h1{font-size:clamp(44px,7vw,88px);line-height:1.02;margin:0 0 8px}
+h2{font-size:clamp(28px,5vw,56px);line-height:1.06;margin:0}
+h3{font-size:clamp(18px,2.2vw,24px);margin:0}
+p{line-height:1.7;margin:.5rem 0}
+.kicker{letter-spacing:.18em;text-transform:uppercase;font-weight:800;font-size:12px;color:var(--muted)}
+
+/* ===== Header (floating) ===== */
+header{position:fixed;inset:0 0 auto 0;z-index:50;pointer-events:none}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:18px 0;pointer-events:auto}
+.brand{display:flex;gap:12px;align-items:center;font-weight:900}
+.badge{width:26px;height:26px;border-radius:50%;
+  background: conic-gradient(from 210deg, var(--a), var(--b), var(--c), var(--d), var(--a));
+  box-shadow:0 0 0 2px rgba(0,0,0,.5) inset, 0 10px 24px rgba(0,0,0,.45);
+}
+nav a{color:var(--muted);margin:0 12px;font-weight:700}
+.btn{
+  display:inline-block;padding:12px 18px;border-radius:999px;font-weight:900;
+  background: linear-gradient(90deg, var(--a), var(--c));
+  color:#120f0f; border:0; box-shadow:0 10px 30px rgba(0,0,0,.4);
+  transition:transform .08s ease, filter .2s ease
+}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
+.btn.ghost{background:rgba(255,255,255,.06);color:var(--ink);border:1px solid var(--line)}
+
+/* ===== Sections (full-bleed) ===== */
+.section{min-height:100svh;display:flex;align-items:center;position:relative}
+.block{width:100%;padding:18vh 0 14vh}
+.split{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
+@media(max-width:1000px){.split{grid-template-columns:1fr;gap:28px}}
+.sub{color:var(--muted);max-width:900px}
+.sep{height:1px;background:linear-gradient(90deg,transparent, var(--line), transparent);opacity:.8;margin:24px 0}
+
+/* ===== Kinetic Engine (canvas) ===== */
+#engine{position:fixed;inset:0;z-index:-1;pointer-events:none}
+
+/* ===== Readiness overlay (single form) ===== */
+#formOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.85);backdrop-filter:blur(8px);z-index:200}
+.formSheet{background:#141414;border-radius:18px;max-width:520px;width:92%;padding:32px;color:#fff;position:relative;box-shadow:0 0 40px rgba(0,0,0,.6)}
+.closeX{position:absolute;right:18px;top:14px;font-size:20px;background:none;border:none;color:#fff;cursor:pointer}
+
+/* Form fields */
+form{display:grid;gap:12px;margin-top:14px}
+label{font-size:12px;color:#e9e3da}
+input,select,textarea{
+  width:100%;padding:14px 16px;border-radius:14px;border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.06); color:var(--ink); outline:none;
+}
+input:focus,select:focus,textarea:focus{border-color:rgba(255,255,255,.32); box-shadow:0 0 0 4px rgba(255,255,255,.06)}
+.inline{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:720px){.inline{grid-template-columns:1fr}}
+.success{display:none;color:#9ff7cf;font-weight:700}
+
+/* ===== Progress dots ===== */
+.rail{position:fixed;right:18px;top:50%;transform:translateY(-50%);z-index:40;display:flex;flex-direction:column;gap:10px}
+.dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.15);cursor:pointer;transition:transform .15s ease, background .2s ease}
+.dot.active{background:linear-gradient(90deg,var(--a),var(--c));transform:scale(1.15)}
+
+/* ===== Footer ===== */
+footer{padding:40px 0;color:var(--muted);text-align:center}
+
+/* ===== Body themes per section (tints canvas + gradients) ===== */
+body.hero        {--a:#f65a83; --b:#ffd36b; --c:#40f6a8; --d:#ff8a45;}
+body.accruready  {--a:#ff8a45; --b:#ffd36b; --c:#40f6a8; --d:#f65a83;}
+body.accruagent  {--a:#40f6a8; --b:#ffd36b; --c:#f65a83; --d:#ff8a45;}
+body.accruguard  {--a:#ffd36b; --b:#40f6a8; --c:#f65a83; --d:#ff8a45;}
+body.accruledger {--a:#f65a83; --b:#40f6a8; --c:#ffd36b; --d:#ff8a45;}
+body.accruprivacy{--a:#ffd36b; --b:#f65a83; --c:#40f6a8; --d:#ff8a45;}
+body.contact     {--a:#40f6a8; --b:#f65a83; --c:#ffd36b; --d:#ff8a45;}
+
+/* ===== Reveal ===== */
+.reveal{opacity:0;transform:translateY(16px);transition:opacity .6s ease, transform .6s ease}
+.reveal.on{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body class="hero">
+
+<canvas id="engine"></canvas>
+
+<header>
+  <div class="wrap nav">
+    <div class="brand"><div class="badge" aria-hidden="true"></div>AccruLabs.ai</div>
+    <nav aria-label="Primary">
+      <a href="#hero">Home</a>
+      <a href="#accruready">AccruReady</a>
+      <a href="#accruagent">AccruAgent</a>
+      <a href="#accruguard">AccruGuard</a>
+      <a href="#accruledger">AccruLedger</a>
+      <a href="#accruprivacy">AccruPrivacy</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <a class="btn" href="#accruready">Start</a>
+  </div>
+</header>
+
+<!-- Progress dots -->
+<div class="rail" id="rail"></div>
+
+<!-- ================= HERO ================= -->
+<section class="section" id="hero">
+  <div class="wrap block">
+    <div class="split">
+      <div class="reveal">
+        <div class="kicker">AccruLabs.ai</div>
+        <h1>Assess. Deploy. Govern. Audit.</h1>
+        <p class="sub">A single AI stack—designed like a luxury product, engineered for control. No gimmicks. Just outcomes.</p>
+        <div style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap">
+          <a class="btn" href="#accruready">Explore modules</a>
+          <a class="btn ghost" href="#contact">Talk to us</a>
+        </div>
+      </div>
+      <div aria-hidden="true" class="reveal"><div style="height:min(62vh,540px)"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 1) AccruReady ================= -->
+<section class="section" id="accruready">
+  <div class="wrap block">
+    <div class="reveal">
+      <div class="kicker">Module 01</div>
+      <h2>AccruReady — Assess Your AI Readiness</h2>
+      <p class="sub">
+        Every transformation begins with clarity. <strong>AccruReady</strong> is your organisation’s first diagnostic layer —
+        a guided AI readiness assessment that evaluates your digital foundation, data infrastructure, governance maturity,
+        and cultural preparedness for AI adoption.
+      </p>
+      <p class="sub">
+        It aligns with global benchmarks like <strong>ISO 42001</strong>, the <strong>EU AI Act</strong>, and India’s
+        <strong>DPDP Act 2023</strong>, translating complex compliance and capability frameworks into a simple,
+        actionable readiness score.
+      </p>
+      <p class="sub">
+        AccruReady identifies where you stand today — from <strong>Digital Foundation</strong> → <strong>AI Awareness</strong> → <strong>AI Ready</strong> —
+        and recommends a customised roadmap for your next step towards Responsible AI transformation.
+      </p>
+      <p class="sub"><em>Take your AI Readiness Assessment now — tailored for you.</em></p>
+      <div style="margin-top:22px">
+        <a class="btn" id="openForm">Take Assessment</a>
+      </div>
+      <div class="sep"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 2) AccruAgent ================= -->
+<section class="section" id="accruagent">
+  <div class="wrap block">
+    <div class="reveal">
+      <div class="kicker">Module 02</div>
+      <h2>AccruAgent — Build Your Responsible AI Agents</h2>
+      <p class="sub">
+        From vision to intelligent action. <strong>AccruAgent</strong> empowers organisations to create custom AI agents that
+        think, learn, and act responsibly — built around your real business SOPs, datasets, and compliance boundaries.
+      </p>
+      <p class="sub">
+        It’s more than an agent builder — it’s a platform that combines domain intelligence + governance-first design,
+        ensuring your agents follow ethical, explainable, and bias-free logic.
+      </p>
+      <p class="sub"><strong>With AccruAgent, you can:</strong></p>
+      <ul class="sub" style="margin-left:18px">
+        <li>Design industry-specific AI assistants (CA, HR, Legal, Banking, Education, etc.).</li>
+        <li>Integrate DPDP & GDPR privacy safeguards at every layer.</li>
+        <li>Deploy instantly across chat, web, or enterprise apps.</li>
+      </ul>
+      <p class="sub">
+        Every AccruAgent is powered by structured prompts, verified datasets, and audit-ready logic — making AI not just useful, but trustworthy.
+      </p>
+      <p class="sub"><em>Create your Responsible AI Agent today — start building with confidence.</em></p>
+      <div class="sep"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 3) AccruGuard ================= -->
+<section class="section" id="accruguard">
+  <div class="wrap block">
+    <div class="reveal">
+      <div class="kicker">Module 03</div>
+      <h2>AccruGuard — Global AI Governance, Simplified</h2>
+      <p class="sub">
+        Governance isn’t a checkbox — it’s the backbone of trust. <strong>AccruGuard</strong> brings a unified layer of AI governance,
+        helping businesses comply with global frameworks like ISO 42001, EU AI Act, NIST AI RMF, and regional privacy laws (DPDP, GDPR, PDPL).
+      </p>
+      <p class="sub"><strong>Through a single dashboard, AccruGuard enables:</strong></p>
+      <ul class="sub" style="margin-left:18px">
+        <li><strong>AI Risk Mapping & Classification</strong> – Identify prohibited, high, and limited-risk systems.</li>
+        <li><strong>Governance Audits</strong> – Maintain policy and process compliance with real-time logs.</li>
+        <li><strong>Documentation & Reporting</strong> – Generate AI risk registers, data lineage, and transparency statements automatically.</li>
+      </ul>
+      <p class="sub">
+        Designed for boards, compliance officers, and auditors — AccruGuard converts complex obligations into actionable insights,
+        ensuring accountability across every AI lifecycle stage.
+      </p>
+      <p class="sub"><em>Strengthen your AI Governance with AccruGuard — start your compliance journey now.</em></p>
+      <div class="sep"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 4) AccruLedger ================= -->
+<section class="section" id="accruledger">
+  <div class="wrap block">
+    <div class="reveal">
+      <div class="kicker">Module 04</div>
+      <h2>AccruLedger — Auditing the Future of AI</h2>
+      <p class="sub">
+        Audit isn’t just about numbers anymore — it’s about algorithms. <strong>AccruLedger</strong> is your dedicated AI audit platform,
+        designed to trace, verify, and document how your AI systems make decisions.
+      </p>
+      <p class="sub"><strong>It delivers deep insights into:</strong></p>
+      <ul class="sub" style="margin-left:18px">
+        <li><strong>Model Transparency</strong> – Track inputs, outputs, and key decision points.</li>
+        <li><strong>Fairness & Bias Checks</strong> – Detect bias or deviation in model predictions.</li>
+        <li><strong>Audit Trails</strong> – Generate automated logs, audit files, and compliance evidence.</li>
+      </ul>
+      <p class="sub">
+        Built for CAs, auditors, and AI compliance professionals, AccruLedger transforms traditional audits into intelligent AI assurance —
+        blending finance-grade precision with technology-grade depth.
+      </p>
+      <p class="sub"><em>Start your AI Agent Audit with AccruLedger — make trust measurable.</em></p>
+      <div class="sep"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 5) AccruPrivacy ================= -->
+<section class="section" id="accruprivacy">
+  <div class="wrap block">
+    <div class="reveal">
+      <div class="kicker">Module 05</div>
+      <h2>AccruPrivacy — Protect What Powers Your AI</h2>
+      <p class="sub">
+        Every AI system runs on data — but every dataset deserves protection. <strong>AccruPrivacy</strong> is your enterprise-grade
+        PrivacyOps suite for managing compliance under India’s DPDP Act 2023, GDPR, PDPL, and other international frameworks.
+      </p>
+      <p class="sub"><strong>It offers:</strong></p>
+      <ul class="sub" style="margin-left:18px">
+        <li><strong>Consent & Data Retention Manager</strong> – Automate consent capture, renewal, and deletion schedules.</li>
+        <li><strong>PII Detection Engine</strong> – Identify and anonymize personal data in files and databases.</li>
+        <li><strong>Data Transfer & Cross-Border Logs</strong> – Track how, where, and why your data moves.</li>
+      </ul>
+      <p class="sub">
+        AccruPrivacy helps you embed privacy into your AI workflows from day one — securing trust, ensuring compliance,
+        and maintaining accountability.
+      </p>
+      <p class="sub"><em>Secure your AI data foundation with AccruPrivacy — get your compliance check today.</em></p>
+      <div class="sep"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= Contact CTA ================= -->
+<section class="section" id="contact" style="min-height:70svh">
+  <div class="wrap block">
+    <div class="reveal">
+      <div class="kicker">Next step</div>
+      <h2>Tell us what you want to build.</h2>
+      <p class="sub">We usually reply within 24 hours. Keep it high-level—no client IDs or sensitive numbers here.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:14px">
+        <a class="btn" href="mailto:hello@accrulabs.ai">Email us</a>
+        <a class="btn ghost" href="#accruready">Or start with Readiness</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>© <span id="y"></span> AccruLabs.ai</footer>
+
+<!-- ===== Popup Form Overlay (single form; opens from AccruReady) ===== -->
+<div id="formOverlay">
+  <div class="formSheet">
+    <button class="closeX" id="closeForm" aria-label="Close">✕</button>
+    <h3 style="margin:0 0 12px;font-size:24px;">AI Readiness — Quick Form</h3>
+    <p style="color:#cfc7be;margin-bottom:18px;">We’ll send your readiness score and tailored roadmap.</p>
+    <form id="readyForm">
+      <div class="inline">
+        <div><label for="name">Full Name</label><input id="name" name="name" required placeholder="e.g., Ranjan Singhal"></div>
+        <div><label for="email">Work Email</label><input id="email" name="email" type="email" required placeholder="you@company.com"></div>
+      </div>
+      <div class="inline">
+        <div><label for="company">Organisation</label><input id="company" name="company" required placeholder="Company / Firm name"></div>
+        <div><label for="industry">Industry</label>
+          <select id="industry" name="industry" required>
+            <option value="">Select Industry</option>
+            <option>BFSI</option><option>Healthcare</option><option>Manufacturing</option>
+            <option>Professional Services</option><option>Education</option>
+            <option>Retail / E-com</option><option>Logistics & Transport</option>
+            <option>Energy & Utilities</option><option>Telecom</option><option>Other</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn">Submit & Get Score</button>
+      <span id="readyOK" class="success">Thanks! We’ll reach out soon.</span>
+    </form>
+  </div>
+</div>
+
+<script>
+/* Year */
+document.getElementById('y').textContent = new Date().getFullYear();
+
+/* Smooth scroll */
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    const id=a.getAttribute('href');
+    if(id==="#"||id.length<2) return;
+    const el=document.querySelector(id);
+    if(!el) return;
+    e.preventDefault();
+    const y=el.getBoundingClientRect().top + window.scrollY - 80;
+    window.scrollTo({top:y,behavior:'smooth'});
+  });
+});
+
+/* Reveal on scroll */
+const io=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('on'); });
+},{threshold:.12});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+/* Progress dots + body theme sync */
+const sections=[...document.querySelectorAll('section.section')];
+const rail=document.getElementById('rail');
+sections.forEach(s=>{
+  const d=document.createElement('div');
+  d.className='dot';
+  d.title=s.id;
+  d.addEventListener('click',()=>s.scrollIntoView({behavior:'smooth'}));
+  rail.appendChild(d);
+});
+const dots=[...rail.querySelectorAll('.dot')];
+const spy=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const idx=sections.indexOf(e.target);
+      dots.forEach((d,i)=>d.classList.toggle('active',i===idx));
+      document.body.className = e.target.id; // set body class for palette morph
+      morphTheme(e.target.id);
+    }
+  });
+},{threshold:.55});
+sections.forEach(s=>spy.observe(s));
+
+/* Readiness popup form */
+const overlay=document.getElementById('formOverlay');
+const openForm=document.getElementById('openForm');
+const closeForm=document.getElementById('closeForm');
+openForm?.addEventListener('click',()=>overlay.style.display='flex');
+closeForm?.addEventListener('click',()=>overlay.style.display='none');
+overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.style.display='none'; });
+
+/* Form handler (replace console.log with your endpoint / webhook) */
+const readyForm=document.getElementById('readyForm');
+const readyOK=document.getElementById('readyOK');
+readyForm.addEventListener('submit',e=>{
+  e.preventDefault();
+  const data=Object.fromEntries(new FormData(readyForm).entries());
+  console.log('AccruReady form:', data);
+  readyOK.style.display='inline';
+  readyForm.reset();
+  setTimeout(()=>readyOK.style.display='none',3800);
+  setTimeout(()=>overlay.style.display='none',4000);
+});
+
+/* ===== KINETIC ENGINE: full-bleed AI network that morphs per section ===== */
+const canvas=document.getElementById('engine');
+const ctx=canvas.getContext('2d');
+let W,H,PR;
+function fit(){PR=window.devicePixelRatio||1; W=canvas.width=innerWidth*PR; H=canvas.height=innerHeight*PR; ctx.setTransform(PR,0,0,PR,0,0)}
+fit(); addEventListener('resize',fit);
+
+let t=0;
+let theme={ nodes:160, link:120, speed:.36, swirl:.0026, thickness:.9, glow:0.14 };
+const P = Array.from({length:260}).map(()=>({
+  x: Math.random()*innerWidth,
+  y: Math.random()*innerHeight,
+  vx:(Math.random()-.5), vy:(Math.random()-.5)
+}));
+
+function hexToHue(hex){
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  const mx=Math.max(r,g,b), mn=Math.min(r,g,b); const d=mx-mn;
+  let h=0; if(d===0)h=0; else if(mx===r)h=((g-b)/d)%6; else if(mx===g)h=(b-r)/d+2; else h=(r-g)/d+4;
+  return Math.round((h*60+360)%360);
+}
+function huesFromCSS(){
+  const cs=getComputedStyle(document.body);
+  return [cs.getPropertyValue('--a'), cs.getPropertyValue('--b'), cs.getPropertyValue('--c')]
+    .map(s=>s.trim()).filter(v=>v.startsWith('#')).map(hexToHue);
+}
+let HUES=huesFromCSS();
+
+function morphTheme(id){
+  HUES=huesFromCSS();
+  if(id==='hero')        theme={nodes:160,link:120,speed:.36,swirl:.0026,thickness:.9, glow:.14};
+  if(id==='accruready')  theme={nodes:182,link:132,speed:.40,swirl:.0030,thickness:1.0, glow:.18};
+  if(id==='accruagent')  theme={nodes:190,link:138,speed:.44,swirl:.0034,thickness:1.1, glow:.20};
+  if(id==='accruguard')  theme={nodes:172,link:128,speed:.34,swirl:.0023,thickness:1.2, glow:.16};
+  if(id==='accruledger') theme={nodes:186,link:136,speed:.38,swirl:.0029,thickness:1.25,glow:.18};
+  if(id==='accruprivacy')theme={nodes:168,link:126,speed:.32,swirl:.0025,thickness:1.0, glow:.16};
+  if(id==='contact')     theme={nodes:150,link:118,speed:.30,swirl:.0022,thickness:.9,  glow:.14};
+}
+
+function step(){
+  t+=0.006;
+  ctx.clearRect(0,0,innerWidth,innerHeight);
+
+  // ambient wash
+  const [h1,h2]=HUES.length?HUES:[340,60];
+  const g=ctx.createLinearGradient(0,0,innerWidth,innerHeight);
+  g.addColorStop(0,`hsla(${h1},90%,60%,.10)`);
+  g.addColorStop(1,`hsla(${h2},90%,60%,.08)`);
+  ctx.fillStyle=g; ctx.fillRect(0,0,innerWidth,innerHeight);
+
+  // move nodes
+  for(const p of P){
+    p.vx += Math.sin((p.y*theme.swirl)+t)*0.02;
+    p.vy += Math.cos((p.x*theme.swirl)+t)*0.02;
+    p.x += p.vx*theme.speed; p.y += p.vy*theme.speed;
+    if(p.x<-50) p.x=innerWidth+50; if(p.x>innerWidth+50) p.x=-50;
+    if(p.y<-50) p.y=innerHeight+50; if(p.y>innerHeight+50) p.y=-50;
+  }
+
+  // links
+  ctx.lineWidth=theme.thickness;
+  for(let i=0;i<theme.nodes;i++){
+    const a=P[i];
+    for(let j=i+1;j<theme.nodes;j++){
+      const b=P[j];
+      const dx=a.x-b.x, dy=a.y-b.y, d=Math.hypot(dx,dy);
+      if(d<theme.link){
+        const o = 1 - d/theme.link;
+        ctx.strokeStyle = `hsla(${h1},90%,60%,${o*.22})`;
+        ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+      }
+    }
+  }
+
+  // nodes glow
+  ctx.globalCompositeOperation='lighter';
+  for(let i=0;i<theme.nodes;i++){
+    const p=P[i];
+    ctx.fillStyle=`hsla(${h2},90%,60%,${theme.glow})`;
+    ctx.fillRect(p.x,p.y,1.6,1.6);
+  }
+  ctx.globalCompositeOperation='source-over';
+
+  requestAnimationFrame(step);
+}
+step();
+
+/* kick initial theme */
+morphTheme('hero');
+</script>
+</body>
+</html>
