@@ -98,7 +98,7 @@ export default function HeroSection() {
             transition={{ duration: 0.6, delay: 0.5 }}
           >
             {[
-              { num: "₹200Cr", label: "Maximum penalty per violation" },
+              { num: "₹250Cr", label: "Maximum penalty per violation" },
               { num: "22+", label: "Compliance checks in Satark" },
               { num: "5 min", label: "Time for a free scan" },
             ].map((stat) => (
